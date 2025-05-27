@@ -1,12 +1,12 @@
 const express = require("express");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcryptjs"); 
 const dotenv = require("dotenv");
 
 const {
-  generateJWTWithPrivateKey,
+  generateJWTWithPrivateKey, 
   fetchStudents,
   fetchProfessors,
-} = require("./util");
+} = require("./util"); 
 const { ROLES } = require("../../../consts");
 
 const router = express.Router();
@@ -23,28 +23,34 @@ router.post("/student", async (req, res) => {
         .status(400)
         .json({ message: "Email and password are required" });
     }
+
+    // Get the list of all students
+    const students = await fetchStudents(); 
+    const student = students.find((s) => s.email === email);
+
+    if (!student) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    // Compare submitted password with stored hashed password
+    const isPasswordValid = await bcrypt.compare(password, student.password); //
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    // Generate JWT
+    const token = await generateJWTWithPrivateKey({ 
+      userId: student._id, 
+      email: student.email,
+      role: ROLES.STUDENT,
+    });
+    res.json({ token });
+
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Student login error:", error);
+    res.status(500).json({ message: "Server error during student login" });
   }
 });
-//get tthe list of all students
-const students = await fetchStudents();
-const student = students.find((student) => student.email === email);
-if (!student) {
-    return res.status(400).json({ message: "Invalid email or password" });
-  }
-const isPasswordValid = await bcrypt.compare(password, student.password);
-if (!isPasswordValid) {
-    return res.status(400).json({ message: "Invalid email or password" });
-  }
-const token = await generateJWTWithPrivateKey(
-    student._id,
-    student.email,
-    ROLES.STUDENT
-  );
-  res.json({ token });
-  
 
 // Professor Login
 router.post("/professor", async (req, res) => {
@@ -56,9 +62,31 @@ router.post("/professor", async (req, res) => {
         .status(400)
         .json({ message: "Email and password are required" });
     }
+
+    // Fetch professors
+    const professors = await fetchProfessors(); 
+    const professor = professors.find((p) => p.email === email);
+
+    if (!professor) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, professor.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ message: "Invalid email or password" });
+    }
+
+    // Generate JWT
+    const token = await generateJWTWithPrivateKey({ 
+      userId: professor._id, 
+      email: professor.email,
+      role: ROLES.PROFESSOR,
+    });
+    res.json({ token });
+
   } catch (error) {
-    console.log(error);
-    res.status(500).json({ message: "Server error" });
+    console.error("Professor login error:", error);
+    res.status(500).json({ message: "Server error during professor login" });
   }
 });
 
