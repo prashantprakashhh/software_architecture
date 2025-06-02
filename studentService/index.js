@@ -17,7 +17,7 @@ connectDB();
 app.use(express.json());
 app.use("/api/students", studentRoutes);
 
-const PORT = process.env.PORT || 5003;
+const PORT = process.env.PORT || 5002;
 
 app.listen(PORT, () => {
     console.log(`studentService is running on port ${PORT}`);

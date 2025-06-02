@@ -80,7 +80,7 @@ router.post("/professor", async (req, res) => {
     const token = await generateJWTWithPrivateKey({ 
       userId: professor._id, 
       email: professor.email,
-      role: ROLES.PROFESSOR,
+      roles: [ROLES.PROFESSOR],
     });
     res.json({ token });
 
