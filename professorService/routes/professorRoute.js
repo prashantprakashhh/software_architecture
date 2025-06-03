@@ -1,8 +1,8 @@
 const express = require("express");
 const Professor = require("../models/professor"); // Your Professor model
-// const bcrypt = require("bcrypt"); // bcrypt is not directly used in this file for GET, only in model's pre-save
-// const { verifyRole, restrictProfessorToOwnData } = require("./auth/util"); // Uncomment if you have these utils
-// const { ROLES } = require("../../consts"); // Uncomment if you have these utils
+const bcrypt = require("bcrypt");
+// const { verifyRole, restrictProfessorToOwnData } = require("./auth/util"); 
+// const { ROLES } = require("../../consts");
 const router = express.Router();
 
 // POST a new professor
@@ -32,7 +32,7 @@ router.post("/", async (req, res) => {
         // Save the new professor
         const savedProfessor = await newProfessor.save();
 
-        // Respond with the created professor (excluding password for this specific response)
+        
         const professorResponse = savedProfessor.toObject();
         delete professorResponse.password; 
         
@@ -45,12 +45,9 @@ router.post("/", async (req, res) => {
 });
 
 // GET all professors
-// This route is called by authService to get professor data for login.
-// It MUST include the password hash for bcrypt.compare to work in authService.
 router.get("/", async (req, res) => {
     try {
-        // REMOVED .select('-password') so authService can get the hashed password
-        const professors = await Professor.find(); 
+        const professors = await Professor.find().select('-password'); // Exclude passwords
         res.status(200).json(professors);
     } catch (error) {
         console.error("Error fetching professors:", error);
@@ -58,24 +55,41 @@ router.get("/", async (req, res) => {
     }
 });
 
-// Example: GET a single professor by ID (you might want to exclude password here for general use)
+//Single prof by id
 router.get("/:id", async (req, res) => {
     try {
-        // For single GETs that are not for auth purposes, excluding password is good.
-        const professor = await Professor.findById(req.params.id).select('-password'); 
+        const professor = await Professor.findById(req.params.id).select('-password');
         if (!professor) {
             return res.status(404).json({ message: "Professor not found" });
         }
         res.status(200).json(professor);
-    } catch (error) {
+    } catch (error) { 
         console.error("Error fetching professor by ID:", error);
-        if (error.kind === 'ObjectId') {
+        if (error.kind === 'ObjectId') { 
             return res.status(400).json({ message: "Invalid professor ID format" });
         }
         res.status(500).json({ message: "Server error while fetching professor" });
     }
 });
 
-// Add other PUT, DELETE routes as needed.
+// DELETE a professor by ID
+router.delete("/:id", async (req, res) => {
+    try {
+        const professor = await Professor.findByIdAndDelete(req.params.id);
+
+        if (!professor) {
+            return res.status(404).json({ message: "Professor not found" });
+        }
+
+        res.status(200).json({ message: "Professor deleted successfully", deletedProfessor: professor });
+    } catch (error) {
+        console.error("Error deleting professor:", error);
+        if (error.kind === 'ObjectId') { 
+            return res.status(400).json({ message: "Invalid professor ID format" });
+        }
+        res.status(500).json({ message: "Server error while deleting professor" });
+    }
+});
+
 
 module.exports = router;
