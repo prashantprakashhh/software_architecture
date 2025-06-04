@@ -17,10 +17,10 @@ const esTransport = (appName) => {
   let transporter = {
     level: "info", // Minimum log level to send to Elasticsearch
     clientOpts: {
-      node: "<yourelasticsearchendpoint>:9243",
+      node: "https://e006a8342cbc4d2fbd21c914c1b213c6.us-central1.gcp.cloud.es.io:9243",
       auth: {
         username: "elastic",
-        password: "your password",
+        password: "password",
       },
     },
     indexPrefix: "sms-logs", // Logs will be stored in indices like "nodejs-logs-YYYY.MM.DD"
