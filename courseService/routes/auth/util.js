@@ -58,7 +58,7 @@ async function verifyJWTWithJWKS(token) {
 function verifyRole(requiredRoles) {
   return async (req, res, next) => {
     const token =
-      req.headers.authorization && req.headers.authorization.split(" ")[1]; // Extract token from 'Bearer <token>'
+      req.headers.authorization && req.headers.authorization.split(" ")[1]; 
 
     if (!token) {
       return res

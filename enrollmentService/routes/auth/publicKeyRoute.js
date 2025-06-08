@@ -4,7 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const { kid } = require("./util");
 
-// Path to your private and public keys
+// Path to private and public keys
 const publicKey = fs.readFileSync(
   path.join(__dirname, "../auth/keys/public.key"),
   "utf8"

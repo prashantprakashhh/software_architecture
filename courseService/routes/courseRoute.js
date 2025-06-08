@@ -1,8 +1,7 @@
-// courseService/routes/courseRoute.js
 const express = require("express");
-const Course = require("../models/course"); // Correct path to models
+const Course = require("../models/course"); 
 const router = express.Router();
-const { verifyRole } = require("./auth/util"); // Correct path to auth utils
+const { verifyRole } = require("./auth/util"); 
 const { ROLES } = require("../../consts");
 
 // Create a new course
@@ -11,7 +10,7 @@ router.post(
   verifyRole([ROLES.ADMIN, ROLES.PROFESSOR]),
   async (req, res) => {
     try {
-      // Ensure req.user and req.user.userId exist from the JWT payload
+      
       if (!req.user || !req.user.userId) {
         console.error("User ID (userId) not found in token payload for createdBy field.");
         return res.status(401).json({ error: "Unauthorized: User ID missing from token." });
@@ -93,10 +92,9 @@ router.put(
         return res.status(401).json({ error: "Unauthorized: User ID missing from token for ownership check." });
       }
       
-      // Ownership Check: Allow if user is ADMIN or the creator of the course
-      // Ensure to compare with req.user.userId as createdBy stores userId
+      
       if (
-        (req.user.roles && req.user.roles.includes(ROLES.ADMIN)) || // Check if roles array exists and includes ADMIN
+        (req.user.roles && req.user.roles.includes(ROLES.ADMIN)) || 
         course.createdBy === req.user.userId 
       ) {
         // Prevent createdBy from being updated
@@ -151,10 +149,8 @@ router.delete(
         return res.status(401).json({ error: "Unauthorized: User ID missing from token for ownership check." });
       }
 
-      // Ownership Check: Allow if user is ADMIN or the creator of the course
-      // Ensure to compare with req.user.userId as createdBy stores userId
       if (
-        (req.user.roles && req.user.roles.includes(ROLES.ADMIN)) || // Check if roles array exists and includes ADMIN
+        (req.user.roles && req.user.roles.includes(ROLES.ADMIN)) || 
         course.createdBy === req.user.userId
       ) {
         await Course.findByIdAndDelete(courseId);

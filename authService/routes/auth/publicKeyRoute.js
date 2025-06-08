@@ -4,13 +4,12 @@ const fs = require("fs");
 const path = require("path");
 const { kid } = require("./util");
 
-// Path to your private and public keys
 const publicKey = fs.readFileSync(
   path.join(__dirname, "../auth/keys/public.key"),
   "utf8"
 );
 
-// JWKS endpoint (to expose the public key in JWK format)
+// JWKS endpoint 
 router.get("/", (req, res) => {
   const publicJWK = {
     keys: [

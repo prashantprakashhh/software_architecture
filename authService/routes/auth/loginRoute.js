@@ -1,19 +1,23 @@
 const express = require("express");
-const bcrypt = require("bcryptjs"); // Assuming you use bcryptjs in authService
-const { generateJWTWithPrivateKey, fetchStudents, fetchProfessors } = require("./util"); // Ensure generateJWTWithPrivateKey is correctly implemented
+const bcrypt = require("bcryptjs"); 
+const { generateJWTWithPrivateKey, fetchStudents, fetchProfessors } = require("./util");
 const { ROLES } = require("../../../consts");
 const router = express.Router();
+const {authServiceLogger} = require("../../../logging"); 
 
-// Student Login (remains the same)
+// Student Login
 router.post("/student", async (req, res) => {
     const { email, password } = req.body;
+    authServiceLogger.info({ message: "Student login attempt initiated", email: email, action: "student-login-attempt" });
     try {
         if (!email || !password) {
+    authServiceLogger.warn({ message: "Student login failed: Email or password missing", email: email, action: "student-login-fail", reason: "missing_credentials" });
             return res.status(400).json({ message: "Email and password are required" });
         }
         const students = await fetchStudents();
         const student = students.find((s) => s.email === email);
-        if (!student || !student.password) { // Check if student and student.password exist
+        authServiceLogger.info({ message: "Fetched students for login attempt", email: email, action: "student-login-fetch-students" });
+        if (!student || !student.password) { 
             return res.status(401).json({ message: "Invalid email or password (student not found or no password)" });
         }
         const isPasswordValid = await bcrypt.compare(password, student.password);
@@ -23,8 +27,9 @@ router.post("/student", async (req, res) => {
         const token = await generateJWTWithPrivateKey({
             userId: student._id,
             email: student.email,
-            roles: [ROLES.STUDENT], // Ensure roles is an array
+            roles: [ROLES.STUDENT], 
         });
+        authServiceLogger.info({ message: "Student login successful", email: student.email, userId: student._id, action: "student-login-success" });
         res.json({ token, user: { id: student._id, email: student.email, name: student.name, roles: [ROLES.STUDENT] } });
     } catch (error) {
         console.error("Student login error:", error);
@@ -32,9 +37,10 @@ router.post("/student", async (req, res) => {
     }
 });
 
-// Professor Login (with Admin check)
+// Professor Login 
 router.post("/professor", async (req, res) => {
     const { email, password } = req.body;
+    authServiceLogger.info({ message: "Professor login attempt initiated", email: email, action: "professor-login-attempt" });
     try {
         if (!email || !password) {
             return res.status(400).json({ message: "Email and password are required" });
@@ -51,19 +57,19 @@ router.post("/professor", async (req, res) => {
             return res.status(401).json({ message: "Invalid email or password" });
         }
 
-        let userRoles = [ROLES.PROFESSOR]; // Default to PROFESSOR
-        // Assign ADMIN role if the email matches your designated admin email
+        let userRoles = [ROLES.PROFESSOR]; 
+        
         if (professor.email === "admin@example.com") {
-            userRoles = [ROLES.ADMIN, ROLES.PROFESSOR]; // Admin can also be a professor
+            userRoles = [ROLES.ADMIN, ROLES.PROFESSOR]; 
         }
 
         const token = await generateJWTWithPrivateKey({
-            userId: professor._id, // This is the ID from the professorService DB
+            userId: professor._id,
             email: professor.email,
-            roles: userRoles, // Use the determined roles (as an array)
+            roles: userRoles, 
         });
         
-        // Send back user info along with token
+      
         const userResponse = {
             id: professor._id,
             email: professor.email,
@@ -75,7 +81,7 @@ router.post("/professor", async (req, res) => {
 
     } catch (error) {
         console.error("Professor login error:", error);
-        // Check if the error is due to fetchProfessors (e.g., professorService down)
+        
         if (error.message && error.message.includes("fetchProfessors")) {
              return res.status(503).json({ message: "Service unavailable: Could not connect to professor service."});
         }

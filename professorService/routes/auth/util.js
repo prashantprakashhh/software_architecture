@@ -1,35 +1,3 @@
-// const jwt = require("jsonwebtoken");
-// const dotenv = require("dotenv");
-// const axios = require("axios");
-// const { ROLES } = require("../../../consts");
-
-// dotenv.config();
-
-// async function fetchJWKS(jku) {}
-
-// function getPublicKeyFromJWKS(kid, keys) {
-//   const key = keys.find((k) => k.kid === kid);
-
-//   if (!key) {
-//     throw new Error("Unable to find a signing key that matches the 'kid'");
-//   }
-
-//   return `-----BEGIN PUBLIC KEY-----\n${key.n}\n-----END PUBLIC KEY-----`;
-// }
-
-// async function verifyJWTWithJWKS(token) {}
-
-// // Role-based Access Control Middleware
-// function verifyRole(requiredRoles) {}
-
-// function restrictStudentToOwnData(req, res, next) {}
-
-// module.exports = {
-//   verifyRole,
-//   restrictStudentToOwnData,
-// };
-
-
 const jwt = require("jsonwebtoken");
 const axios = require("axios");
 const { ROLES, AUTH_SERVICE_JWKS_URL } = require("../../../consts"); // Get ROLES and JWKS URL from root consts
@@ -125,9 +93,9 @@ function verifyRole(requiredRoles) {
 
     try {
       const decodedPayload = await verifyJWTWithJWKS(token);
-      req.user = decodedPayload; // Attach the decoded payload to the request object
+      req.user = decodedPayload; 
 
-      // Your JWT payload from authService should have 'roles' as an array, e.g., roles: [ROLES.PROFESSOR]
+      
       const userRoles = req.user.roles || []; 
       
       const hasRequiredRole = userRoles.some((role) =>
@@ -152,8 +120,9 @@ function verifyRole(requiredRoles) {
   };
 }
 
-// Middleware to restrict a professor to only access/modify their own data.
-// Admin can bypass this restriction.
+
+
+
 function restrictProfessorToOwnData(req, res, next) {
   // req.user should be populated by verifyRole middleware
   if (!req.user || !req.user.userId || !req.user.roles) {
@@ -187,5 +156,5 @@ function restrictProfessorToOwnData(req, res, next) {
 module.exports = {
   verifyRole,
   restrictProfessorToOwnData,
-  // verifyJWTWithJWKS // Not typically exported if only used internally by verifyRole
+  fetchJWKS,
 };

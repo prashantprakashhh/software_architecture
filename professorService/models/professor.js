@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt"); // For password hashing
 
-// Define the Professor Schema
+// Professor Schema
 const professorSchema = new mongoose.Schema({
   name: {
     type: String,
@@ -10,22 +10,22 @@ const professorSchema = new mongoose.Schema({
   email: {
     type: String,
     required: true,
-    unique: true, // Ensure each professor has a unique email
+    unique: true, 
   },
   phone: {
     type: String,
     required: true,
-    unique: true, // Ensure each professor has a unique phone number
+    unique: true, 
   },
   password: {
     type: String,
-    required: true, // Store the hashed password
+    required: true, 
   },
 });
 
-// Pre-save hook to hash the password before saving
+
 professorSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next(); // Only hash if the password is new/changed
+  if (!this.isModified("password")) return next(); 
 
   try {
     const salt = await bcrypt.genSalt(10);
