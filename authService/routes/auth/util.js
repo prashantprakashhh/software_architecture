@@ -64,7 +64,16 @@ async function fetchStudents() {
     throw new Error("Student service URL is not configured.");
   }
   try {
-    const response = await axios.get(STUDENT_SERVICE_URL_FROM_CONSTS);
+    const serviceToken = await generateJWTWithPrivateKey({
+        userId: 'auth-service',
+        roles: [ROLES_FROM_CONSTS.AUTH_SERVICE]
+    });
+
+    const response = await axios.get(STUDENT_SERVICE_URL_FROM_CONSTS, {
+        headers: {
+            'Authorization': `Bearer ${serviceToken}`
+        }
+    });
     return response.data;
   } catch (error) {
     console.error(`[authService/util.js] Error fetching students from ${STUDENT_SERVICE_URL_FROM_CONSTS}:`, error.message);
@@ -78,12 +87,24 @@ async function fetchProfessors() {
     console.error("[authService/util.js] PROFESSOR_SERVICE_URL is undefined. Cannot fetch professors.");
     throw new Error("Professor service URL is not configured.");
   }
-  console.log(`[authService/util.js] Fetching professors from: ${PROFESSOR_SERVICE_URL_FROM_CONSTS}`);
+  
+  const urlForAuth = `${PROFESSOR_SERVICE_URL_FROM_CONSTS}/internal/all`;
+  console.log(`[authService/util.js] Fetching professors for auth from: ${urlForAuth}`);
+  
   try {
-    const response = await axios.get(PROFESSOR_SERVICE_URL_FROM_CONSTS);
+    const serviceToken = await generateJWTWithPrivateKey({
+        userId: 'auth-service',
+        roles: [ROLES_FROM_CONSTS.AUTH_SERVICE]
+    });
+
+    const response = await axios.get(urlForAuth, {
+        headers: {
+            'Authorization': `Bearer ${serviceToken}`
+        }
+    });
     return response.data;
   } catch (error) {
-    console.error(`[authService/util.js] Error fetching professors from ${PROFESSOR_SERVICE_URL_FROM_CONSTS}:`, error.message);
+    console.error(`[authService/util.js] Error fetching professors from ${urlForAuth}:`, error.message);
     if (error.isAxiosError) console.error("Axios error details:", error.toJSON());
     throw new Error(`Failed to fetch professors. ${error.message}`);
   }

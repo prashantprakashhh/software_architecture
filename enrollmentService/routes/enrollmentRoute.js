@@ -3,47 +3,47 @@ const Enrollment = require("../models/enrollment");
 const router = express.Router();
 const {
   verifyRole,
-  restrictStudentToOwnData, // Assuming this should be restrictUserToOwnEnrollmentData or similar if needed
+  restrictStudentToOwnData,
   fetchStudents,
   fetchCourses,
-} = require("./auth/util"); // Ensure path is correct
+} = require("./auth/util");
 const { ROLES } = require("../../consts");
 
 // Create a new enrollment
 router.post(
   "/",
-  verifyRole([ROLES.ADMIN, ROLES.STUDENT]), // Or ROLES.ADMIN, ROLES.PROFESSOR depending on who can enroll
+  verifyRole([ROLES.ADMIN, ROLES.STUDENT, ROLES.PROFESSOR]),
   async (req, res) => {
     try {
-      const { studentId, courseId } = req.body;
+      const { student, course } = req.body;
 
-      if (!studentId || !courseId) {
+      if (!student || !course) {
         return res
           .status(400)
           .json({ message: "Student ID and Course ID are required" });
       }
 
-      // Fetch and Validate Student (ensure fetchStudents in util.js works and authenticates)
-      const students = await fetchStudents();
-      const studentExists = students.some(s => s._id.toString() === studentId.toString()); 
+      // Pass the 'req' object to forward the auth token
+      const students = await fetchStudents(req);
+      const studentExists = students.some(s => s._id.toString() === student.toString()); 
       if (!studentExists) {
         return res.status(404).json({ message: "Student with the provided ID does not exist" });
       }
 
-      // Fetch and Validate Course (ensure fetchCourses in util.js works and authenticates)
-      const courses = await fetchCourses();
-      const courseExists = courses.some(c => c._id.toString() === courseId.toString());
+      // Pass the 'req' object to forward the auth token
+      const courses = await fetchCourses(req);
+      const courseExists = courses.some(c => c._id.toString() === course.toString());
       if (!courseExists) {
         return res.status(404).json({ message: "Course with the provided ID does not exist" });
       }
 
-      const enrollment = new Enrollment({ student: studentId, course: courseId });
+      const enrollment = new Enrollment({ student: student, course: course });
       await enrollment.save();
 
       res.status(201).json(enrollment);
     } catch (error) {
       console.error("Error creating enrollment:", error);
-      if (error.code === 11000) { // MongoDB duplicate key error
+      if (error.code === 11000) {
          return res.status(409).json({ message: "Student is already enrolled in this course." });
       }
       res.status(500).json({
@@ -60,7 +60,7 @@ router.get(
   verifyRole([ROLES.ADMIN, ROLES.PROFESSOR]),
   async (req, res) => {
     try {
-      let enrollments = await Enrollment.find().populate('student', 'name email').populate('course', 'name code'); // Example of populating
+      let enrollments = await Enrollment.find().populate('student', 'name email').populate('course', 'name code');
       res.status(200).json(enrollments);
     } catch (error) {
       console.error("Error fetching all enrollments:", error);
@@ -111,9 +111,8 @@ router.get(
   restrictStudentToOwnData, 
   async (req, res) => {
     try {
-      // req.params.id here refers to the student's User ID (userId from JWT or DB ID)
       let enrollments = await Enrollment.find({ student: req.params.id })
-                                        .populate('course', 'name code description schedule'); // Populate course details
+                                        .populate('course', 'name code description schedule');
 
       if (!enrollments || enrollments.length === 0) {
         return res
@@ -121,7 +120,6 @@ router.get(
           .json({ message: "No enrollments found for this student ID" });
       }
       
-
       res.status(200).json(enrollments);
     } catch (error) {
       console.error("Error fetching enrollments for student:", error);
@@ -138,13 +136,13 @@ router.get(
 
 // Get enrollments by course ID
 router.get(
-  "/course/:id", // This :id is the course's DB ID
+  "/course/:id",
   verifyRole([ROLES.ADMIN, ROLES.PROFESSOR]),
   async (req, res) => {
     try {
       const courseId = req.params.id;
       let enrollments = await Enrollment.find({ course: courseId })
-                                        .populate('student', 'name email'); // Populate student details
+                                        .populate('student', 'name email');
 
       if (!enrollments || enrollments.length === 0) {
         return res
@@ -168,7 +166,7 @@ router.get(
 
 // Delete an enrollment by ID
 router.delete(
-  "/:id", // This :id is the enrollment's DB ID
+  "/:id",
   verifyRole([ROLES.ADMIN, ROLES.STUDENT]),
   async (req, res) => {
     try {
